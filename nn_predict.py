@@ -3,8 +3,7 @@ import json
 
 # === Activation functions ===
 def relu(x):
-    # 使用np.maximum確保所有負值變為0
-    return np.maximum(0, x)  # [1]
+    return np.maximum(0, x)
 
 def softmax(x):
     x = np.asarray(x)
@@ -25,8 +24,13 @@ def flatten(x):
 def dense(x, W, b):
     return x @ W + b
 
+# === Batch Normalization ===
+def batch_normalization(x, gamma, beta, moving_mean, moving_variance, epsilon=1e-3):
+    # 推論時使用移動平均和移動方差
+    return gamma * (x - moving_mean) / np.sqrt(moving_variance + epsilon) + beta
+
 # Infer TensorFlow h5 model using numpy
-# Support only Dense, Flatten, relu, softmax now
+# Support Dense, Flatten, relu, softmax, BatchNormalization, Dropout
 def nn_forward_h5(model_arch, weights, data):
     x = data
     for layer in model_arch:
@@ -45,11 +49,19 @@ def nn_forward_h5(model_arch, weights, data):
                 x = relu(x)
             elif cfg.get("activation") == "softmax":
                 x = softmax(x)
+        elif ltype == "BatchNormalization":
+            # BatchNormalization 有 4 個參數：gamma, beta, moving_mean, moving_variance
+            gamma = weights[wnames[0]]        # scale
+            beta = weights[wnames[1]]         # offset
+            moving_mean = weights[wnames[2]]  # moving_mean
+            moving_variance = weights[wnames[3]]  # moving_variance
+            x = batch_normalization(x, gamma, beta, moving_mean, moving_variance)
+        elif ltype == "Dropout":
+            # 推論時直接跳過 Dropout，不做任何處理
+            pass
 
     return x
-
 
 # You are free to replace nn_forward_h5() with your own implementation 
 def nn_inference(model_arch, weights, data):
     return nn_forward_h5(model_arch, weights, data)
-    
