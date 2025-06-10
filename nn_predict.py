@@ -7,9 +7,15 @@ def relu(x):
     return np.maximum(0, x)  # [1]
 
 def softmax(x):
-    # 減去每一行的最大值以避免數值溢位
-    e_x = np.exp(x - np.max(x, axis=1, keepdims=True))
-    return e_x / np.sum(e_x, axis=1, keepdims=True)  # [2]
+    x = np.asarray(x)
+    if x.ndim == 1:
+        e_x = np.exp(x - np.max(x))
+        return e_x / np.sum(e_x)
+    elif x.ndim == 2:
+        e_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+        return e_x / np.sum(e_x, axis=1, keepdims=True)
+    else:
+        raise ValueError("Input must be 1D or 2D array.")
 
 # === Flatten ===
 def flatten(x):
